@@ -13,6 +13,8 @@ training/runs/
 # Datasets (large, third-party licensed - never commit)
 datasets/raw/
 datasets/processed/
+datasets/processed_demo/
+runs/
 
 # Runtime data
 logs/*.log*

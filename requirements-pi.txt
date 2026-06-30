@@ -1,0 +1,34 @@
+# Lean dependency set for the Raspberry Pi itself - inference + dashboard only.
+# Excludes training/export deps (torch, torchvision, ultralytics, albumentations,
+# onnx, onnxconverter-common, torch-pruning) which are large, slow to build on
+# ARM, and unnecessary on-device: training and ONNX export run on a workstation/
+# cloud GPU (see training/ + docs/deployment_guide.md), not the Pi.
+#
+# Use this on the Pi: pip install -r requirements-pi.txt
+# Use requirements.txt (full set) only on the machine you train/export models on.
+
+numpy>=1.26,<2.0
+opencv-python-headless>=4.9
+onnxruntime>=1.17
+PyYAML>=6.0
+psutil>=5.9
+
+# picamera2 is apt-installed on Raspberry Pi OS, not pip - see scripts/setup_raspberry_pi.sh
+# sudo apt install python3-picamera2
+
+gpiozero>=2.0
+
+# Dashboard - two alternative front-ends, pick one to run in production
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+streamlit>=1.37
+pandas>=2.0
+
+# Notifications
+paho-mqtt>=1.6,<2.0
+requests>=2.31
+firebase-admin>=6.5   # optional - only used if notifications.firebase.enabled
+
+# Testing (optional on-device, useful to confirm the deploy is healthy)
+pytest>=8.0

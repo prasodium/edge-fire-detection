@@ -1,0 +1,4 @@
+model_file,precision,input_size,mean_latency_ms,p95_latency_ms,fps,cpu_percent_during,peak_rss_mb,model_size_mb,host_cpu
+yolov8n_fire_fp16_416.onnx,fp16,416,39.44,43.66,25.36,299.0,173.6,5.82,arm
+yolov8n_fire_fp32_416.onnx,fp32,416,39.21,43.33,25.5,299.0,180.8,11.61,arm
+yolov8n_fire_int8_416.onnx,int8,416,15.41,16.57,64.89,299.0,187.6,3.25,arm

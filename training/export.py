@@ -21,7 +21,10 @@ def export_fp32(weights_path: str, imgsz: int, out_dir: Path) -> Path:
     from ultralytics import YOLO
 
     model = YOLO(weights_path)
-    onnx_path = model.export(format="onnx", imgsz=imgsz, simplify=True, opset=12, dynamic=False)
+    # opset 13+ is required for per-channel static quantization in quantize_int8()
+    # below - DequantizeLinear's per-channel "axis" attribute isn't recognized
+    # before opset 13, which makes onnxruntime reject the INT8 graph at load time.
+    onnx_path = model.export(format="onnx", imgsz=imgsz, simplify=True, opset=13, dynamic=False)
     dest = out_dir / f"yolov8n_fire_fp32_{imgsz}.onnx"
     Path(onnx_path).rename(dest)
     logger.info("Exported FP32 ONNX -> %s", dest)
@@ -30,10 +33,23 @@ def export_fp32(weights_path: str, imgsz: int, out_dir: Path) -> Path:
 
 def convert_fp16(fp32_path: Path, out_dir: Path, imgsz: int) -> Path:
     import onnx
+    from onnx import shape_inference
     from onnxconverter_common import float16
 
     model = onnx.load(str(fp32_path))
-    model_fp16 = float16.convert_float_to_float16(model, keep_io_types=True)
+    # op_block_list excludes Resize (used by YOLO's upsample layers) from fp16
+    # conversion: onnxconverter-common (1.16.0, at minimum) leaves a stale
+    # fp32 value_info on the Resize output after blocking it, and onnxruntime
+    # refuses to load the graph ("Type Error ... Resize_output_cast0") because
+    # the declared type doesn't match the auto-inserted Cast node downstream.
+    # Clearing value_info and re-running shape inference recomputes correct
+    # types instead of trusting the converter's stale annotations.
+    model_fp16 = float16.convert_float_to_float16(
+        model, keep_io_types=True, op_block_list=["Resize"],
+    )
+    del model_fp16.graph.value_info[:]
+    model_fp16 = shape_inference.infer_shapes(model_fp16, strict_mode=False)
+
     dest = out_dir / f"yolov8n_fire_fp16_{imgsz}.onnx"
     onnx.save(model_fp16, str(dest))
     logger.info("Converted FP16 ONNX -> %s", dest)

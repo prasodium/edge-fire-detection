@@ -12,7 +12,10 @@ python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 
 pip install --upgrade pip wheel
-pip install -r requirements.txt
+# requirements-pi.txt is the lean, inference-only set (no torch/ultralytics) -
+# that's all the Pi needs. Use requirements.txt instead only if you intend to
+# train/export models directly on this machine (not recommended on a Pi).
+pip install -r requirements-pi.txt
 
 mkdir -p logs storage/snapshots storage/clips weights
 

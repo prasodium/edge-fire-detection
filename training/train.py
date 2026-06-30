@@ -47,6 +47,7 @@ def train(
     project: str = "training/runs",
     name: str = "fire_smoke",
     teacher_weights: str | None = None,
+    device: str | None = None,
 ) -> Path:
     from ultralytics import YOLO
 
@@ -62,8 +63,10 @@ def train(
         batch=batch,
         patience=patience,           # early stopping
         cos_lr=True,                 # cosine LR schedule
-        amp=True,                    # mixed precision (no-op gracefully on CPU-only training)
+        amp=device != "mps",         # mixed precision - skip on MPS, ultralytics AMP path targets CUDA
         optimizer="AdamW",
+        lr0=0.001,                    # AdamW needs a much lower initial LR than the lr0=0.01 default
+        lrf=0.01,                     # tuned for SGD - leaving lr0 at the SGD default with AdamW diverges
         project=project,
         name=f"{name}_{base_model}_{image_size}",
         # Built-in augmentation hyperparameters cover brightness/contrast/saturation/hue/
@@ -76,6 +79,8 @@ def train(
         mosaic=0.8, mixup=0.1,
         copy_paste=0.1,
     )
+    if device:
+        train_kwargs["device"] = device
 
     results = model.train(**train_kwargs)
     best_weights = Path(results.save_dir) / "weights" / "best.pt"
@@ -162,6 +167,7 @@ def main() -> None:
     parser.add_argument("--tune", action="store_true", help="Run hyperparameter evolutionary search instead of training")
     parser.add_argument("--prune-ratio", type=float, default=None, help="Apply structured pruning to --weights after training")
     parser.add_argument("--weights", type=str, default=None, help="Existing weights to prune (skips training)")
+    parser.add_argument("--device", type=str, default=None, help="e.g. 'cpu', 'mps' (Apple Silicon), '0' (CUDA device 0)")
     args = parser.parse_args()
 
     if args.tune:
@@ -175,6 +181,7 @@ def main() -> None:
     train(
         data_yaml=args.data, base_model=args.base_model, image_size=args.imgsz,
         epochs=args.epochs, batch=args.batch, patience=args.patience, teacher_weights=args.teacher,
+        device=args.device,
     )
 
 

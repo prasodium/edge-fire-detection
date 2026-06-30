@@ -9,34 +9,51 @@ budget.
 
 ## What's real vs. what's scaffolded
 
-This repository is a **complete, working software system**: every Python
-module is real, runnable code (not pseudocode), and the pure-logic core —
-temporal verification, multi-object tracking, false-positive filtering,
-zone mapping, config loading, bounded frame queue — has a passing unit test
-suite (`pytest tests/ -v`, 20/20 passing as of this writing).
+This repository is a **complete, working software system**, and as of this
+writing it ships with a **real trained model**, not just code: a YOLOv8n
+detector trained on 201 real, license-clear fire/smoke images, exported to
+ONNX (FP32/FP16/INT8), benchmarked, and wired into `configs/model.yaml` so
+the pipeline and both dashboards run out of the box. Three real bugs were
+found and fixed while getting that model trained and exported (an AdamW
+learning-rate mismatch that caused training to diverge, an FP16-export
+graph onnxruntime refused to load, and an opset version that broke INT8
+quantization) — see `docs/benchmark_report.md` for the details and the real
+measured numbers, including a significant accuracy regression found in the
+INT8 export that's worth reading before you assume "INT8 is always best."
 
-What it does **not** include, because they require resources outside this
-environment:
+**This shipped model is a 2-class pipeline-validation demo
+(`small_flame`, `smoke`), not the production 15-class detector** described
+elsewhere in this README — 141 training images proves the system works
+end-to-end, it does not cover electrical/paper/wood/curtain/plastic fire,
+the zone-context classes, or the false-positive hard-negative set. See
+`weights/README.md` and `docs/benchmark_report.md` for exactly what was
+trained on, what the measured accuracy was, and how to retrain on the full
+production taxonomy.
 
-- **A trained fire/smoke model.** `weights/` is empty by design (see
-  `weights/README.md`). `training/` contains a complete, real training
-  pipeline (dataset normalization, augmentation, Ultralytics training with
-  transfer learning/early stopping/cosine LR, ONNX export, FP16/INT8
-  quantization, benchmarking) — but actually running it requires GPU time
-  and the licensed third-party datasets listed in `configs/dataset.yaml`.
-- **Real Raspberry Pi 5 hardware benchmarks.** `docs/benchmark_report.md`
-  is a template with a working measurement harness
-  (`training/benchmark.py`, `scripts/benchmark_models.sh`); the numbers in
-  `docs/model_comparison.md` are clearly labeled as literature-derived
-  estimates pending on-device validation.
-- **Downloaded third-party datasets.** Not redistributed here for license
-  reasons; `training/dataset_prep.py` defines the normalization pipeline
-  each one feeds into.
+The pure-logic core (temporal verification, multi-object tracking,
+false-positive filtering, zone mapping, config loading, bounded frame
+queue) plus a real end-to-end integration test against the trained model
+(detector finds objects in a real fire photo; decision engine stays silent
+on a static frame; decision engine correctly alarms under simulated
+flicker/motion) — 23/23 tests passing (`pytest tests/ -v`).
+
+What still requires resources outside this environment:
+
+- **The production 15-class model.** `training/` has the full pipeline
+  (dataset normalization, augmentation, transfer learning, export,
+  quantization, benchmarking) ready to point at a real production dataset —
+  see `configs/dataset.yaml` for the licensed third-party sources to combine
+  with your own on-site data collection.
+- **Real Raspberry Pi 5 hardware numbers.** The benchmark numbers in
+  `docs/benchmark_report.md` were measured on an Apple M2 dev machine, not
+  a Pi 5 — re-run `scripts/benchmark_models.sh` on the actual device before
+  trusting absolute FPS/latency against the 10-15 FPS / 80% CPU targets.
 
 Everything else — camera capture, the 5-stage detection/decision pipeline,
 GPIO alarm control, video/snapshot recording, MQTT/Firebase notifications,
-SQLite event logging, and the FastAPI dashboard — is implemented and
-covered by automated tests where the logic doesn't require a camera or GPU.
+SQLite event logging, and both dashboards (FastAPI + Streamlit) — is
+implemented and either unit-tested or integration-tested against the real
+model.
 
 ## Quick start (development, no Pi required)
 
@@ -66,6 +83,51 @@ true MJPEG at the configured inference FPS).
 
 See `docs/deployment_guide.md` for the full walkthrough including systemd
 setup, camera calibration, and zone configuration.
+
+## Run it and test accuracy right now (with the included demo model)
+
+On any machine (Pi or dev laptop with a webcam — `camera.yaml:backend`
+auto-falls-back to OpenCV off-Pi):
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+bash scripts/run_dashboard.sh        # http://localhost:8000 - live feed + bounding boxes
+# or: bash scripts/run_streamlit.sh  # http://localhost:8501
+```
+
+Point the camera at fire-colored/flickering imagery (a lighter at a safe
+distance, recorded fire footage on a phone, etc. — see
+`docs/testing_guide.md` for safe testing procedure) and watch for bounding
+boxes labeled `small_flame`/`smoke` in the live view, and an alarm after ~8
+consecutive confident frames.
+
+**To check accuracy** against the held-out test set used to validate this
+model:
+
+```bash
+pip install ultralytics
+yolo val model=weights/yolov8n_fire_fp32_416.onnx \
+    data=datasets/processed_demo/data.yaml split=test imgsz=416
+```
+
+This reproduces the numbers in `docs/benchmark_report.md` (mAP50=0.742,
+precision=0.90, recall=0.68 on 20 held-out images). To run the same
+integration tests that validate the full detector→decision-engine path
+against this real model:
+
+```bash
+pytest tests/test_integration_demo_model.py -v
+```
+
+To benchmark latency/CPU/memory on **your own machine** (these numbers
+differ meaningfully from the Apple M2 numbers in the report — re-run on
+your actual target hardware, especially the Pi 5):
+
+```bash
+python -m training.benchmark --weights-dir weights \
+    --images-dir datasets/raw/libreyolo_fire_smoke_bbox/test/images --runs 100
+```
 
 ## Project structure
 

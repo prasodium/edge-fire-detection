@@ -110,7 +110,11 @@ class FireDetector:
                     class_id=cid,
                     class_name=name,
                     confidence=float(confidences[idx]),
-                    box_xyxy=box,
+                    # cast to native float: numpy.float32 survives the arithmetic in
+                    # unletterbox_box and otherwise breaks Pydantic/FastAPI JSON
+                    # serialization (dashboard/app.py's /api/status) with
+                    # "Unable to serialize unknown type: numpy.float32"
+                    box_xyxy=tuple(float(v) for v in box),
                 )
             )
         return detections

@@ -1,0 +1,44 @@
+# Alarm / GPIO / notification configuration
+
+gpio:
+  backend: "gpiozero"        # gpiozero | mock (mock used automatically off-Pi)
+  buzzer_pin: 17
+  relay_pin: 27               # Drives siren / sprinkler-interlock / building FACP dry contact
+  led_pin: 22
+  active_high: true
+
+alarm:
+  siren_duration_s: 30
+  siren_repeat: true
+  led_blink_hz: 4
+  auto_silence_after_s: 300   # Auto-silence siren after 5 min if not manually acknowledged
+  require_manual_reset: true  # Dashboard "Acknowledge & Reset" required to fully clear critical alarm
+
+recording:
+  save_snapshot_on_alarm: true
+  snapshot_format: "jpg"
+  save_clip_on_alarm: true
+  clip_pre_event_s: 5          # Ring buffer: seconds of video kept BEFORE the alarm trigger
+  clip_post_event_s: 15
+  clip_fps: 10
+  clip_codec: "mp4v"
+  max_storage_gb: 20            # Oldest clips/snapshots pruned beyond this
+
+notifications:
+  mqtt:
+    enabled: true
+    broker_host: "localhost"
+    broker_port: 1883
+    topic: "firealert/seminar-hall-01"
+    qos: 1
+    retain: false
+  firebase:
+    enabled: false
+    credentials_path: "configs/secrets/firebase_credentials.json"
+    fcm_topic: "fire_alerts"
+  webhook:
+    enabled: false
+    url: ""
+
+database:
+  retention_days: 90

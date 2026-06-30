@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Edge Fire &amp; Smoke Detection Dashboard</title>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Edge Fire &amp; Smoke Detection — Seminar Hall</h1>
+    <div id="alarm-banner" class="hidden">ALARM ACTIVE — FIRE/SMOKE CONFIRMED</div>
+  </header>
+
+  <main>
+    <section class="live-view">
+      <img id="video" src="/video_feed" alt="Live camera feed" />
+      <div class="controls">
+        <button id="ack-btn">Acknowledge &amp; Reset Alarm</button>
+      </div>
+    </section>
+
+    <aside class="telemetry">
+      <h2>System Telemetry</h2>
+      <table>
+        <tr><td>CPU</td><td id="cpu">--</td></tr>
+        <tr><td>RAM</td><td id="ram">--</td></tr>
+        <tr><td>Temperature</td><td id="temp">--</td></tr>
+        <tr><td>FPS</td><td id="fps">--</td></tr>
+        <tr><td>Alarm</td><td id="alarm-state">--</td></tr>
+      </table>
+
+      <h2>Active Detections</h2>
+      <ul id="detections"></ul>
+    </aside>
+  </main>
+
+  <section class="history">
+    <h2>Detection History</h2>
+    <table id="events-table">
+      <thead>
+        <tr><th>Time</th><th>Class</th><th>Severity</th><th>Confidence</th><th>Zones</th><th>Media</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

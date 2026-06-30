@@ -1,0 +1,26 @@
+[Unit]
+Description=Edge Fire & Smoke Detection - Dashboard + Inference Pipeline
+After=network-online.target mosquitto.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/edge-fire-detection
+ExecStart=/home/pi/edge-fire-detection/scripts/run_dashboard.sh
+Restart=on-failure
+RestartSec=5
+# Keep the service inside the 15W power budget's CPU implication: cap to 3
+# cores so one core stays free for systemd/journald/network on a 4-core Pi 5.
+CPUQuota=300%
+MemoryMax=2G
+Nice=-5
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/pi/edge-fire-detection/logs /home/pi/edge-fire-detection/storage
+
+[Install]
+WantedBy=multi-user.target

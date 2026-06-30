@@ -1,0 +1,38 @@
+# Core runtime
+numpy>=1.26,<2.0
+opencv-python-headless>=4.9
+onnxruntime>=1.17
+PyYAML>=6.0
+psutil>=5.9
+
+# Camera (picamera2 is apt-installed on Raspberry Pi OS, not pip - see
+# scripts/setup_raspberry_pi.sh; listed here only as a comment for clarity)
+# picamera2  -- installed via: sudo apt install python3-picamera2
+
+# GPIO (gpiozero is preinstalled on Raspberry Pi OS; pinned here for non-Pi dev/test parity)
+gpiozero>=2.0
+
+# Dashboard - two alternative front-ends, pick one to run in production
+# (see dashboard/streamlit_app.py docstring on why not both at once)
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+streamlit>=1.37          # provides st.fragment(run_every=...) used by dashboard/streamlit_app.py
+pandas>=2.0
+
+# Notifications
+paho-mqtt>=1.6,<2.0
+requests>=2.31
+firebase-admin>=6.5   # optional - only used if notifications.firebase.enabled
+
+# Training (run on a workstation/cloud GPU, not on the Pi)
+ultralytics>=8.3
+torch>=2.2
+torchvision>=0.17
+albumentations>=1.4
+onnx>=1.16
+onnxconverter-common>=1.14
+torch-pruning>=1.3    # optional - only used by training/train.py:prune
+
+# Testing
+pytest>=8.0

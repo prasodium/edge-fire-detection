@@ -1,0 +1,67 @@
+# Multi-stage decision engine / false-positive-reduction configuration
+
+temporal_verification:
+  consecutive_frames_required: 8     # No alarm on a single frame, ever
+  rolling_window_size: 16            # Frames kept for rolling confidence average
+  min_average_confidence: 0.85
+  max_gap_frames: 2                  # Allow up to N missed frames within the streak before reset
+  cooldown_after_alarm_s: 120        # Suppress duplicate alarms for same zone after firing
+
+false_positive_filter:
+  color_consistency:
+    enabled: true
+    flame_hue_range_deg: [0, 45]     # red-orange-yellow band in HSV (with wraparound handling)
+    min_saturation: 0.4
+    min_value: 0.5
+  flicker_analysis:
+    enabled: true
+    min_frequency_hz: 1.0            # Real flames flicker ~1-3Hz; static lights/LEDs don't
+    max_frequency_hz: 6.0
+    min_brightness_variance: 8.0     # On 0-255 scale, per-region temporal std-dev
+  bounding_box_stability:
+    enabled: true
+    max_center_jitter_px: 40
+    iou_match_threshold: 0.3
+  optical_flow:
+    enabled: true
+    smoke_min_divergence: 0.05       # Smoke should show diffusive, upward-biased flow
+    rigid_motion_rejection: true     # Rejects flag-like waving cloth, swinging banners, etc.
+  known_light_source_suppression:
+    enabled: true
+    static_roi_learning_frames: 300  # Background model learns stage lights / EXIT signs at startup
+    reject_constant_regions: true    # Regions with near-zero brightness variance over time = static light
+  reflection_rejection:
+    enabled: true
+    specular_highlight_check: true
+  exclusion_zones: []                # Per-venue calibration: list of [x1,y1,x2,y2] to mask out (e.g. a
+                                      # fixed orange EXIT sign) - populate during on-site commissioning
+
+motion_analysis:
+  enabled: true
+  frame_diff_threshold: 25
+  min_motion_pixels_ratio: 0.002
+  optical_flow_method: "farneback"   # cheap dense flow good enough at 416x416 on CPU
+
+decision_engine:
+  stage_weights:                     # Used only for the dashboard confidence breakdown, not gating
+    ai_detection: 1.0
+    smoke_verification: 1.0
+    temporal_verification: 1.0
+    motion_analysis: 1.0
+  require_all_stages: true           # Stage 5 alarm fires only if every stage agrees
+  alarm_severity_levels:
+    info: 0.0       # logged only
+    warning: 0.60   # dashboard banner, no siren
+    critical: 0.85  # full alarm (siren + relay + notification)
+
+zones:
+  # Used by ZoneMapper to derive context labels (fire_near_projector/podium/stage/exit_door)
+  # from a detection's bounding-box center, calibrated per installation.
+  - name: "stage"
+    polygon: [[0.10, 0.30], [0.90, 0.30], [0.90, 0.95], [0.10, 0.95]]
+  - name: "projector"
+    polygon: [[0.40, 0.05], [0.60, 0.05], [0.60, 0.20], [0.40, 0.20]]
+  - name: "podium"
+    polygon: [[0.05, 0.40], [0.25, 0.40], [0.25, 0.90], [0.05, 0.90]]
+  - name: "exit_door"
+    polygon: [[0.85, 0.10], [1.00, 0.10], [1.00, 1.00], [0.85, 1.00]]

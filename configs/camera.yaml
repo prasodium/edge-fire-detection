@@ -1,0 +1,44 @@
+# Raspberry Pi Camera Module 3 NoIR Wide (Sony IMX708) configuration
+# Tuned for indoor seminar/lecture halls with mixed lighting (daylight + artificial + projector)
+
+camera:
+  backend: "picamera2"          # picamera2 | opencv (opencv used for non-Pi dev machines)
+  device_index: 0                # used only when backend == opencv
+  resolution:
+    capture: [1536, 864]         # Sensor-friendly binned mode for IMX708 wide, good light gathering
+    inference: [640, 640]        # Resized per-frame for the model (see model.yaml input_size)
+  frame_rate: 15
+  format: "RGB888"
+
+  autofocus:
+    enabled: true
+    mode: "continuous"           # continuous | manual | auto-once
+    speed: "normal"
+
+  hdr:
+    enabled: true                 # IMX708 supports HDR mode, helps with projector glare / backlit stages
+
+  exposure:
+    mode: "manual"                # auto exposure hunts under flicker (stage lights) -> false positives
+    exposure_time_us: 8000        # ~1/125s, tuned to reduce motion blur on fast flicker/flame
+    analogue_gain: 2.0
+    auto_exposure_compensation: 0
+
+  white_balance:
+    mode: "manual"                 # auto-WB can "color-correct" warm flame/smoke tones away
+    colour_gains: [1.8, 1.5]       # [red_gain, blue_gain] - calibrate per-venue under installed lighting
+
+  gain:
+    auto_gain: false
+    iso_equivalent: 200
+
+  noise_reduction: "fast"          # fast | high_quality | off (high_quality too slow for 15fps on CPU)
+  sharpness: 1.0
+  contrast: 1.1
+  saturation: 1.0
+
+  low_light:
+    noir_ir_assist: true           # NoIR variant: pair with IR illuminator for night/low-light halls
+    min_lux_warning: 5
+
+  buffer_count: 4                  # Double/triple buffering for async capture pipeline

@@ -1,0 +1,22 @@
+# System-wide configuration for the Edge Fire & Smoke Detection System
+# Target: Raspberry Pi 5 (8GB RAM), CPU-only inference
+
+system:
+  device_name: "seminar-hall-01"
+  max_cpu_percent: 80          # Soft ceiling; pipeline throttles itself above this
+  max_power_watts: 15
+  target_fps_min: 10
+  target_fps_max: 15
+  num_inference_threads: 3     # Leave 1 core free for camera/IO/dashboard
+  num_capture_threads: 1
+  frame_queue_size: 4          # Bounded queue -> backpressure instead of unbounded memory growth
+  log_dir: "logs"
+  log_level: "INFO"
+  thermal_throttle_temp_c: 78  # Pi 5 starts throttling near 80-85C; back off before that
+  thermal_check_interval_s: 5
+
+paths:
+  weights_dir: "weights"
+  snapshots_dir: "storage/snapshots"
+  clips_dir: "storage/clips"
+  database_path: "storage/events.db"

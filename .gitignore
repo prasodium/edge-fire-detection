@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Models / weights (large binaries - track via release artifacts or LFS, not git)
+weights/*.onnx
+weights/*.pt
+training/runs/
+
+# Datasets (large, third-party licensed - never commit)
+datasets/raw/
+datasets/processed/
+
+# Runtime data
+logs/*.log*
+storage/*.db
+storage/snapshots/*
+storage/clips/*
+!storage/snapshots/.gitkeep
+!storage/clips/.gitkeep
+
+# Secrets
+configs/secrets/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

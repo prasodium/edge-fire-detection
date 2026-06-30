@@ -1,0 +1,97 @@
+# Dataset registry for training. Each source is licensed independently - verify license/attribution
+# before redistribution. Run `python training/dataset_prep.py --source <key>` to fetch+normalize.
+
+sources:
+  bowfire:
+    url: "https://bcmi.sjtu.edu.cn/~yangxudong/fire/BoWFireDataset.zip"
+    type: "classification+segmentation"
+    classes: [fire, smoke, not_fire]
+    license: "research-use"
+
+  firenet:
+    url: "https://github.com/arpit-jadon/FireNet-LightWeight-Network-for-Fire-Detection"
+    type: "classification"
+    classes: [fire, normal]
+    license: "MIT"
+
+  flame:
+    url: "https://ieee-dataport.org/open-access/flame-dataset-aerial-imagery-pile-burn-detection-using-drones-uavs"
+    type: "detection"
+    classes: [fire, smoke]
+    license: "CC-BY"
+    note: "Aerial/UAV imagery - use only for flame texture augmentation, not indoor priors"
+
+  fire_smoke_dataset_kaggle:
+    url: "kaggle:phylake1337/fire-dataset"
+    type: "classification"
+    classes: [fire, no_fire]
+    license: "kaggle-terms"
+
+  smoke_detection_dataset:
+    url: "kaggle:vbookshelf/smoke-detection-dataset"
+    type: "classification"
+    classes: [smoke, no_smoke]
+    license: "kaggle-terms"
+
+  open_images_fire:
+    url: "https://storage.googleapis.com/openimages/web/index.html"
+    type: "detection"
+    classes: [fire]
+    license: "CC-BY-4.0"
+    note: "Filter via OIDv6 toolkit for 'Fire' class subset"
+
+  custom_indoor_fire:
+    url: "LOCAL"
+    path: "datasets/raw/custom_indoor_fire/"
+    type: "detection"
+    classes:
+      - small_flame
+      - large_flame
+      - smoke
+      - dense_smoke
+      - thin_smoke
+      - electrical_fire
+      - paper_fire
+      - wooden_fire
+      - curtain_fire
+      - plastic_fire
+      - short_circuit_spark
+    license: "proprietary"
+    note: >
+      Highest-value dataset: must be collected on-site (or in a representative mock seminar hall)
+      with controlled, supervised small-scale ignition tests (paper/wood/curtain/plastic swatches,
+      e-waste short-circuit sparks) under fire-marshal supervision. Required to cover the
+      hard negatives (stage lighting, projector glare, LEDs) that no public dataset captures
+      well for this specific deployment context.
+
+negative_hard_examples:
+  # Explicitly collected/curated to teach the model what is NOT fire (see top-level "False Positive
+  # Reduction" requirement). Each clip/image must be paired 1:1 against a true-positive look-alike.
+  - sunlight_through_windows
+  - orange_stage_lighting
+  - red_led_indicators
+  - yellow_led_indicators
+  - projector_beam_and_screen_content
+  - tv_display_content
+  - mobile_flashlight
+  - decorative_string_lights
+  - specular_reflections_on_glass_metal
+  - sunset_window_light
+  - bright_orange_clothing_or_fabric
+  - fire_video_playing_on_projector_screen
+  - lit_candles
+  - laser_pointer_or_stage_laser
+
+split:
+  train: 0.75
+  val: 0.15
+  test: 0.10
+  stratify_by: "class"
+  seed: 42
+
+target_distribution:
+  day_pct: 40
+  night_low_light_pct: 25
+  fog_haze_pct: 10
+  mixed_artificial_light_pct: 25
+  venue_types: [classroom, lecture_hall, conference_room, auditorium, office, seminar_hall]

@@ -1,0 +1,75 @@
+# Model & inference configuration
+# Default model selected from benchmark (see docs/benchmark_report.md): YOLOv8n, ONNX, INT8, 416x416
+# Swap "active_model" to any key under "models" to switch without code changes.
+
+active_model: "yolov8n_int8_416"
+
+input_size: 416                  # 320 | 416 | 640 - must match the exported model below
+
+classes:
+  - small_flame
+  - large_flame
+  - smoke
+  - dense_smoke
+  - thin_smoke
+  - electrical_fire
+  - paper_fire
+  - wooden_fire
+  - curtain_fire
+  - plastic_fire
+  - short_circuit_spark
+  - fire_near_projector
+  - fire_near_podium
+  - fire_on_stage
+  - fire_near_exit_door
+
+# NOTE: the last 5 "context" classes (fire_near_projector/podium/stage/exit_door) are best modeled
+# as zone-based post-processing (bounding-box-in-ROI) rather than separate trained classes, since
+# they are about scene location, not visual appearance. See inference/decision_engine.py ZoneMapper.
+# They are kept here so the label set documents intent; training/dataset_prep.py collapses them to
+# {flame, smoke} + a `zone` attribute at training time unless --keep-context-classes is passed.
+
+models:
+  yolov8n_fp32_640:
+    framework: "onnxruntime"
+    weights: "weights/yolov8n_fire_fp32_640.onnx"
+    input_size: 640
+    precision: "fp32"
+
+  yolov8n_fp16_416:
+    framework: "onnxruntime"
+    weights: "weights/yolov8n_fire_fp16_416.onnx"
+    input_size: 416
+    precision: "fp16"
+
+  yolov8n_int8_416:
+    framework: "onnxruntime"
+    weights: "weights/yolov8n_fire_int8_416.onnx"
+    input_size: 416
+    precision: "int8"
+
+  yolov8n_int8_320:
+    framework: "onnxruntime"
+    weights: "weights/yolov8n_fire_int8_320.onnx"
+    input_size: 320
+    precision: "int8"
+
+inference:
+  confidence_threshold: 0.45        # Per-frame minimum to even consider a detection
+  nms_iou_threshold: 0.45
+  max_detections: 20
+  onnxruntime:
+    intra_op_num_threads: 3
+    inter_op_num_threads: 1
+    execution_mode: "parallel"
+    graph_optimization_level: "all"
+    enable_cpu_mem_arena: true
+    arena_extend_strategy: "kSameAsRequested"   # avoid arena growth churn on long-running 24/7 process
+
+smoke_branch:
+  enabled: true
+  # Lightweight classical-CV + small classifier ensemble running on flame-detector's smoke class
+  # plus a dedicated optical-flow/dark-channel smoke heuristic (see inference/smoke_detector.py)
+  min_region_area_px: 900
+  dark_channel_threshold: 0.35
+  motion_diffusion_threshold: 0.12

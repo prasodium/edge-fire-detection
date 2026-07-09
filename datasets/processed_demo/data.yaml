@@ -1,0 +1,24 @@
+# DEMO dataset config - NOT the production 15-class taxonomy.
+#
+# Source: LibreYOLO/fire-smoke-seg on HuggingFace Hub (mirror of Roboflow
+# Universe "fire-and-smoke-segmentation" by roboflow-universe-projects),
+# License: CC BY 4.0. https://universe.roboflow.com/roboflow-universe-projects/fire-and-smoke-segmentation
+#
+# Original dataset ships polygon segmentation labels with 2 generic classes
+# (fire, smoke); converted to axis-aligned bounding boxes by
+# training/convert_seg_to_bbox.py. The generic "fire" class is mapped to
+# this project's "small_flame" canonical class (see configs/model.yaml) as
+# a simplification - this dataset does not distinguish small/large flame,
+# electrical/paper/wood/curtain/plastic fire, etc. Use this only to validate
+# that the training -> export -> inference -> decision-engine pipeline works
+# end to end; it is NOT sufficient data for the full 15-class production
+# model described in docs/model_comparison.md.
+
+path: /Users/harprosadmandal/projects/edge-fire-detection/datasets/raw/libreyolo_fire_smoke_bbox
+train: train/images
+val: valid/images
+test: test/images
+
+names:
+  0: small_flame
+  1: smoke

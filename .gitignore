@@ -6,15 +6,15 @@ __pycache__/
 .pytest_cache/
 
 # Models / weights (large binaries - track via release artifacts or LFS, not git)
-weights/*.onnx
-weights/*.pt
-training/runs/
+#weights/*.onnx
+#weights/*.pt
+#training/runs/
 
 # Datasets (large, third-party licensed - never commit)
-datasets/raw/
-datasets/processed/
-datasets/processed_demo/
-runs/
+#datasets/raw/
+#datasets/processed/
+#datasets/processed_demo/
+#runs/
 
 # Runtime data
 logs/*.log*
